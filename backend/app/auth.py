@@ -1,6 +1,6 @@
 """Who is asking, by AUTH_MODE (config.py). Only /api/private/ uses this.
 
-- "proxy": a reverse proxy login (Authelia via nginx on breathdance) sets
+- "proxy": a reverse proxy login (for example nginx + Authelia) sets
   Remote-User plus a shared proxy secret; the name must be in ALLOWED_USERS.
 - "basic": HTTP Basic auth checked here against BASIC_PASSWORD.
 - "none": everyone is the first household member.
@@ -44,7 +44,7 @@ def _user(request: Request, challenge: bool) -> str:
 
 
 def _proxy_user(request: Request, settings) -> str:
-    """As vouched for by the reverse proxy (nginx + Authelia on breathdance)."""
+    """As vouched for by the reverse proxy (for example nginx + Authelia)."""
     if not settings.proxy_secret:
         # Only reachable in development: Settings.validate() refuses production
         # without it. Without a header, you are the first household member.

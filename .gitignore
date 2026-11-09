@@ -25,3 +25,6 @@ __pycache__/
 # Logs
 *.log
 npm-debug.log*
+
+# Local compose additions (deployment-specific)
+docker-compose.override.yml

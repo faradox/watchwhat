@@ -75,13 +75,3 @@ list, adding a movie, editing one.
   Prettier, 2-space indent, PascalCase components.
 - Keep files under 500 lines. No emojis in code, comments or logs.
 - Comments say why, not what. Record decisions in the plan's decision log.
-
-## In the maintainer's environment
-
-watchwhat started inside the maintainer's server monorepo ("breathdance").
-When you work there: do not read secrets or root-owned files, do not run
-commands on the server (write them for the maintainer), and treat git as
-read-only. The laptop has no project-local installs: verify the backend with
-the system Python (`PYTHONNOUSERSITE=1`, `sniffio` and `greenlet` from
-`~/.local` on `PYTHONPATH`) and the frontend with Vite, Tailwind, React and
-vitest borrowed from sibling projects' `node_modules`.

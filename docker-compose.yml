@@ -19,7 +19,7 @@ x-dev: &dev
   PROXY_SECRET: ""
 x-prod: &prod
   ENVIRONMENT: ${WATCHWHAT_ENVIRONMENT:-production}
-  # postgresql://<user>:<password>@postgres:5432/watchwhat, or SQLite in the data dir.
+  # postgresql://<user>:<password>@<host>:5432/watchwhat, or SQLite in the data dir.
   DATABASE_URL: ${WATCHWHAT_DATABASE_URL:-sqlite:////app/data/watchwhat.db}
   # proxy (a login proxy such as Authelia) | basic | none
   AUTH_MODE: ${WATCHWHAT_AUTH_MODE:-proxy}
@@ -36,9 +36,6 @@ services:
     restart: unless-stopped
     ports:
       - "127.0.0.1:${WATCHWHAT_FRONTEND_PORT:-8103}:80"
-    networks:
-      breathnet:
-        ipv4_address: 172.29.13.1
     profiles: ["prod"]
 
   frontend-dev:
@@ -62,9 +59,6 @@ services:
       - /app/node_modules
     stdin_open: true
     tty: true
-    networks:
-      breathnet:
-        ipv4_address: 172.29.13.3
     profiles: ["dev"]
 
   backend:
@@ -83,9 +77,6 @@ services:
       <<: [*all, *prod]
     volumes:
       - ${WATCHWHAT_DATA_DIR:-./data}:/app/data
-    networks:
-      breathnet:
-        ipv4_address: 172.29.13.2
     profiles: ["prod"]
 
   backend-dev:
@@ -107,12 +98,4 @@ services:
       ANTHROPIC_API_KEY: ${WATCHWHAT_DEV_ANTHROPIC_API_KEY:-}
     volumes:
       - ./backend:/app
-    networks:
-      breathnet:
-        ipv4_address: 172.29.13.4
     profiles: ["dev"]
-
-networks:
-  breathnet:
-    external: true
-    name: ${WATCHWHAT_DOCKER_NETWORK_NAME:-breathnet}

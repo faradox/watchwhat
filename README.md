@@ -20,10 +20,9 @@ Status: v1 written 2026-11-09. Plan and decisions: [`docs/plans/v1.md`](docs/pla
 
 ## Run it
 
-Docker, with the `breathnet` network the compose file expects:
+With Docker:
 
 ```sh
-docker network create breathnet --subnet 172.29.0.0/16   # once
 make run-dev     # backend on :8000 (SQLite, logged in), web app on :3000 with hot reload
 ```
 
@@ -35,7 +34,12 @@ without tags.
 
 Production: `make build && make run`, with settings below. The web app on
 port 8103 serves the API under `/api` too, so a standalone install needs one
-port behind your HTTPS proxy.
+port behind your HTTPS proxy. The simplest login is the backend's own:
+
+```sh
+WATCHWHAT_AUTH_MODE=basic WATCHWHAT_BASIC_PASSWORD='12 or more chars' \
+  WATCHWHAT_ALLOWED_USERS=me,partner make run
+```
 
 Without Docker: Python 3.12 and Node 22.
 
@@ -74,7 +78,7 @@ Route `/api/private/` through your login (for example nginx `auth_request`
 with Authelia), add `X-Proxy-Secret`, pass the user as `Remote-User`, and send
 `= /api/private/login` through the same login with a redirect to the login
 page instead of a 401. Everything else goes to the web app without a login,
-with `Remote-User` cleared. The breathdance setup is in the plan, section 11.
+with `Remote-User` cleared.
 
 ## Costs
 
