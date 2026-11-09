@@ -1,0 +1,118 @@
+x-all: &all
+  LOG_LEVEL: ${WATCHWHAT_LOG_LEVEL:-INFO}
+  PORT: 8000
+  # The household: login names, comma-separated; optional nicer names.
+  ALLOWED_USERS: ${WATCHWHAT_ALLOWED_USERS:-}
+  DISPLAY_NAMES: ${WATCHWHAT_DISPLAY_NAMES:-}
+  # Without a TMDB token movies are entered by hand; without an Anthropic key
+  # drafts come without tags.
+  TMDB_TOKEN: ${WATCHWHAT_TMDB_TOKEN:-}
+  ANTHROPIC_API_KEY: ${WATCHWHAT_ANTHROPIC_API_KEY:-}
+  LLM_MODEL: ${WATCHWHAT_LLM_MODEL:-claude-haiku-5-5}
+  LLM_EFFORT: ${WATCHWHAT_LLM_EFFORT:-low}
+x-dev: &dev
+  ENVIRONMENT: development
+  # SQLite in backend/data, and a proxy login without a secret: you are the
+  # first household member, or whoever a Remote-User header names.
+  DATABASE_URL: ${WATCHWHAT_DEV_DATABASE_URL:-sqlite:////app/data/watchwhat-dev.db}
+  AUTH_MODE: proxy
+  PROXY_SECRET: ""
+x-prod: &prod
+  ENVIRONMENT: ${WATCHWHAT_ENVIRONMENT:-production}
+  # postgresql://<user>:<password>@postgres:5432/watchwhat, or SQLite in the data dir.
+  DATABASE_URL: ${WATCHWHAT_DATABASE_URL:-sqlite:////app/data/watchwhat.db}
+  # proxy (a login proxy such as Authelia) | basic | none
+  AUTH_MODE: ${WATCHWHAT_AUTH_MODE:-proxy}
+  PROXY_SECRET: ${WATCHWHAT_PROXY_SECRET:-}
+  BASIC_PASSWORD: ${WATCHWHAT_BASIC_PASSWORD:-}
+
+services:
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    image: watchwhat-frontend:latest
+    container_name: watchwhat-frontend
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:${WATCHWHAT_FRONTEND_PORT:-8103}:80"
+    networks:
+      breathnet:
+        ipv4_address: 172.29.13.1
+    profiles: ["prod"]
+
+  frontend-dev:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile.dev
+    image: watchwhat-frontend-dev:latest
+    container_name: watchwhat-frontend-dev
+    restart: unless-stopped
+    ports:
+      - "${WATCHWHAT_FRONTEND_DEV_PORT:-3000}:3000"
+    environment:
+      - VITE_PROXY_TARGET=http://watchwhat-backend-dev:8000
+      - CHOKIDAR_USEPOLLING=true
+    volumes:
+      - ./frontend/src:/app/src:cached
+      - ./frontend/public:/app/public:cached
+      - ./frontend/index.html:/app/index.html:cached
+      - ./frontend/vite.config.js:/app/vite.config.js:ro
+      - ./frontend/package.json:/app/package.json:ro
+      - /app/node_modules
+    stdin_open: true
+    tty: true
+    networks:
+      breathnet:
+        ipv4_address: 172.29.13.3
+    profiles: ["dev"]
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+      args:
+        USER_ID: ${uid:-1000}
+        GROUP_ID: ${gid:-1000}
+    image: watchwhat-backend:latest
+    container_name: watchwhat-backend
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:${WATCHWHAT_BACKEND_PORT:-8104}:8000"
+    environment:
+      <<: [*all, *prod]
+    volumes:
+      - ${WATCHWHAT_DATA_DIR:-./data}:/app/data
+    networks:
+      breathnet:
+        ipv4_address: 172.29.13.2
+    profiles: ["prod"]
+
+  backend-dev:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+      args:
+        USER_ID: ${uid:-1000}
+        GROUP_ID: ${gid:-1000}
+    image: watchwhat-backend-dev:latest
+    container_name: watchwhat-backend-dev
+    restart: unless-stopped
+    ports:
+      - "${WATCHWHAT_BACKEND_DEV_PORT:-8000}:8000"
+    environment:
+      <<: [*all, *dev]
+      ALLOWED_USERS: ${WATCHWHAT_DEV_ALLOWED_USERS:-me,partner}
+      TMDB_TOKEN: ${WATCHWHAT_DEV_TMDB_TOKEN:-}
+      ANTHROPIC_API_KEY: ${WATCHWHAT_DEV_ANTHROPIC_API_KEY:-}
+    volumes:
+      - ./backend:/app
+    networks:
+      breathnet:
+        ipv4_address: 172.29.13.4
+    profiles: ["dev"]
+
+networks:
+  breathnet:
+    external: true
+    name: ${WATCHWHAT_DOCKER_NETWORK_NAME:-breathnet}

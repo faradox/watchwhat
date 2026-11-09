@@ -1,0 +1,27 @@
+# Node.js
+node_modules/
+dist/
+
+# Local data (SQLite files)
+data/
+
+# Environment
+.env
+.env.*
+!.env.sample
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+.pytest_cache/
+
+# IDE / OS
+.vscode/
+.idea/
+*.swp
+.DS_Store
+
+# Logs
+*.log
+npm-debug.log*
